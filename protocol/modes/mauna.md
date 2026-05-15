@@ -1,3 +1,9 @@
+---
+mode: mauna
+phase: 6
+status: planned
+---
+
 # /mauna
 
 > Phase 6 — Not available in MVP.

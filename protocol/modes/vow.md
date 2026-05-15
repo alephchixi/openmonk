@@ -1,3 +1,9 @@
+---
+mode: vow
+phase: 6
+status: planned
+---
+
 # /vow
 
 > Phase 6 — Not available in MVP.

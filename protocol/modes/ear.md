@@ -1,3 +1,9 @@
+---
+mode: ear
+phase: mvp
+status: active
+---
+
 # /ear
 
 ## Purpose

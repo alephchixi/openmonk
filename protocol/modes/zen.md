@@ -1,3 +1,9 @@
+---
+mode: zen
+phase: mvp
+status: active
+---
+
 # /zen
 
 ## Purpose

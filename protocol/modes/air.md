@@ -1,3 +1,9 @@
+---
+mode: air
+phase: mvp
+status: active
+---
+
 # /air
 
 ## Purpose
