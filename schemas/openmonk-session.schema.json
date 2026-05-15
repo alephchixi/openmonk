@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmonk-session",
+  "title": "OpenMonk Session",
+  "type": "object",
+  "required": ["id", "mode", "durationSeconds", "state", "params", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "mode": {
+      "type": "string",
+      "enum": ["zen", "om", "air", "ear", "mauna", "vow"]
+    },
+    "durationSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600
+    },
+    "state": {
+      "type": "string",
+      "enum": ["idle", "preparing", "playing", "silent", "paused", "complete", "error"]
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "density": { "type": "string", "enum": ["sparse", "regular", "dense"] },
+        "distance": { "type": "string", "enum": ["near", "room", "far"] },
+        "texture": { "type": "string", "enum": ["clean", "breathy", "granular", "resonant"] },
+        "pitch": { "type": "string", "enum": ["low", "mid", "high", "adaptive"] },
+        "stability": { "type": "string", "enum": ["stable", "wavering", "dissolving"] },
+        "mood": { "type": "string", "enum": ["tired", "foggy", "soft", "overloaded", "late", "neutral"] }
+      },
+      "additionalProperties": false
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "endedAt": { "type": "string", "format": "date-time" },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Silence begins.",
+        "Breath reference starts.",
+        "Session complete.",
+        "Returning.",
+        "Paused.",
+        "Stopped.",
+        "Preparing."
+      ]
+    }
+  },
+  "additionalProperties": false
+}
