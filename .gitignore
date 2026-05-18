@@ -11,5 +11,10 @@ test-results
 .openmonk-cache
 public/audio/generated-private
 tsconfig.tsbuildinfo
-OPENMONK_DEVELOPMENT_PLAN.md
 .DS_Store
+
+# Local plans, audits, and non-essential docs
+*.plan.md
+*_PLAN.md
+OPENMONK_DEVELOPMENT_PLAN.md
+monkevo*.md

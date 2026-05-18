@@ -6,6 +6,12 @@
 
 OpenMonk is an open synthetic vocal instrument for contemplative listening. It is not a chatbot. It does not answer, coach, heal, guide, diagnose, or perform wisdom. It rings. It holds. It fades. It stops.
 
+## Why not just a meditation timer?
+
+Timer apps want you to build habits, track streaks, and feel productive.
+OpenMonk has no goals, no streaks, no stats. It generates sound or holds silence.
+You can type a command, press Enter, and listen. When it stops, it stops.
+
 ## Modes
 
 | Mode | Command | Description |
@@ -33,6 +39,8 @@ cp .env.example .env
 
 Without an API key, OpenMonk runs entirely client-side using the built-in Web Audio synthesizer.
 
+> **Never commit `.env`.** Rotate keys immediately if they leave your machine.
+
 ## Commands
 
 Type in the command input to start sessions immediately:
@@ -53,6 +61,15 @@ Type in the command input to start sessions immediately:
 | Density | `--sparse` `--regular` `--dense` |
 | Distance | `--near` `--room` `--far` |
 | Texture | `--clean` `--breathy` `--granular` `--resonant` |
+
+## Don't
+
+- Don't add streaks, gamification, or progress tracking
+- Don't add motivational quotes or therapeutic copy
+- Don't add user accounts or analytics
+- Don't add voice cloning or microphone access
+- Don't add notification sounds or badges
+- Don't add AI chat or conversational interfaces
 
 ## Architecture
 
@@ -77,7 +94,7 @@ Type in the command input to start sessions immediately:
 npm run dev          # Dev server on port 4444
 npm run typecheck    # TypeScript
 npm run lint         # ESLint
-npm run test         # Vitest (50 tests)
+npm run test         # Vitest (57 tests)
 npm run build        # Production build
 ```
 

@@ -6,7 +6,7 @@ import { getAudioRoute } from "../audio-prompts";
 import { getCachedAudio, setCachedAudio } from "../audio-cache";
 
 export async function generateElevenLabsAudio(request: ProviderRequest): Promise<ProviderResult> {
-  const { mode, durationSeconds, params, signal } = request;
+  const { mode, durationSeconds, params, signal, decode } = request;
 
   const audioRoute = getAudioRoute(mode);
   if (audioRoute === "none") {
@@ -41,10 +41,15 @@ export async function generateElevenLabsAudio(request: ProviderRequest): Promise
     await setCachedAudio(cacheKey, audioData);
   }
 
-  // Decode
-  const audioCtx = new AudioContext();
-  const buffer = await audioCtx.decodeAudioData(audioData.slice(0));
-  await audioCtx.close();
+  // Decode using the engine's context (Safari-safe) or fall back to a standalone context
+  let buffer: AudioBuffer;
+  if (decode) {
+    buffer = await decode(audioData);
+  } else {
+    const audioCtx = new AudioContext();
+    buffer = await audioCtx.decodeAudioData(audioData.slice(0));
+    await audioCtx.close();
+  }
 
   return { buffer, loop: true };
 }

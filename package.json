@@ -4,9 +4,9 @@
   "private": false,
   "license": "MIT",
   "scripts": {
-    "dev": "next dev -p 4444",
+    "dev": "next dev -p 4444 --hostname 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 4444",
+    "start": "next start -p 4444 --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

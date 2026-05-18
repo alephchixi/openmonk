@@ -64,7 +64,7 @@ export function transitionSession(
     "playing->pause": { state: "paused", status: "Paused." },
     "playing->complete": { state: "complete", status: "Session complete." },
     "playing->stop": { state: "complete", status: "Stopped." },
-    "silent->play": { state: "playing", status: "Returning." },
+    "silent->play": { state: "playing", status: getStartStatus(session.mode) },
     "silent->complete": { state: "complete", status: "Session complete." },
     "silent->stop": { state: "complete", status: "Stopped." },
     "paused->play": { state: "playing", status: "Returning." },

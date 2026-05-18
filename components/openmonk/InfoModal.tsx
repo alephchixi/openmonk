@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { UiCopy } from "@/lib/openmonk/i18n";
+import type { UiCopy, UiLanguage } from "@/lib/openmonk/i18n";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   copy: UiCopy;
+  language: UiLanguage;
+  onCommand?: (cmd: string) => void;
 };
 
 const COMMANDS_EN = [
@@ -30,10 +32,10 @@ const FLAGS = [
   { flag: "--clean / --breathy / --granular / --resonant", desc: "texture" },
 ];
 
-export function InfoModal({ open, onClose, copy }: Props) {
+export function InfoModal({ open, onClose, copy, language, onCommand }: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
-  const isSpanish = copy.languageToggle === "EN";
+  const isSpanish = language === "es";
   const commands = isSpanish ? COMMANDS_ES : COMMANDS_EN;
 
   useEffect(() => {
@@ -98,10 +100,16 @@ export function InfoModal({ open, onClose, copy }: Props) {
           <h3 className="cheatsheet-title">{isSpanish ? "Comandos" : "Commands"}</h3>
           <div className="cheatsheet-list">
             {commands.map((c) => (
-              <div key={c.cmd} className="cheatsheet-row">
+              <button
+                key={c.cmd}
+                type="button"
+                className="cheatsheet-row cheatsheet-btn"
+                onClick={() => { onCommand?.(c.cmd); onClose(); }}
+                title={`Run ${c.cmd}`}
+              >
                 <code className="cheatsheet-cmd">{c.cmd}</code>
                 <span className="cheatsheet-desc">{c.desc}</span>
-              </div>
+              </button>
             ))}
           </div>
           <h3 className="cheatsheet-title">{isSpanish ? "Parámetros" : "Flags"}</h3>

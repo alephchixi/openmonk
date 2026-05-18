@@ -89,6 +89,29 @@ describe("parseCommand", () => {
       expect(result.message).toContain("not available yet");
     }
   });
+
+  it("rejects conflicting flags within the same group", () => {
+    const result = parseCommand("/om 5 --low --high");
+    expect(isParseError(result)).toBe(true);
+    if (isParseError(result)) {
+      expect(result.message).toContain("Conflicting flag");
+      expect(result.message).toContain("pitch");
+    }
+  });
+
+  it("rejects conflicting density flags", () => {
+    const result = parseCommand("/om 5 --sparse --dense");
+    expect(isParseError(result)).toBe(true);
+    if (isParseError(result)) {
+      expect(result.message).toContain("Conflicting flag");
+      expect(result.message).toContain("density");
+    }
+  });
+
+  it("accepts non-conflicting flags from different groups", () => {
+    const result = parseCommand("/om 5 --low --sparse --far");
+    expect(isParseError(result)).toBe(false);
+  });
 });
 
 describe("resolveDuration", () => {

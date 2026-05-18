@@ -12,7 +12,7 @@ test("slash commands start the requested sessions", async ({ page }) => {
   await expect(page.locator(".session-status")).toHaveText("Silence begins.");
   await expect(page.locator(".session-timer")).toHaveText("01:00");
   await expect(page.locator("#stop-btn")).toBeVisible();
-  await expect(page.locator(".glyph")).toHaveText("◌");
+  await expect(page.locator(".particle-canvas")).toBeVisible();
 
   await page.locator("#stop-btn").click();
   await expect(page.locator(".session-status")).toHaveText("Stopped.");
@@ -63,9 +63,8 @@ test("Spanish toggle translates visible UI", async ({ page }) => {
 
   await page.getByRole("button", { name: "Switch interface to Spanish" }).click();
 
-  await expect(page.locator(".param-label").first()).toHaveText("Duracion");
+  await expect(page.locator('[role="group"][aria-label="Duracion"]')).toBeVisible();
   await expect(page.locator("#begin-btn")).toHaveText("Comenzar");
-  await expect(page.locator("#mute-btn")).toHaveText("Silenciar");
   await expect(page.locator("#mode-air")).toHaveText("Aire");
 
   await page.getByLabel("Entrada de comando").fill("/zen 1");
@@ -73,14 +72,13 @@ test("Spanish toggle translates visible UI", async ({ page }) => {
   await expect(page.locator(".session-status")).toHaveText("Comienza el silencio.");
 });
 
-test("reduced motion disables active glyph animation", async ({ page }) => {
+test("reduced motion disables active animations", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  await page.locator("#mode-om").click();
-  await page.locator("#begin-btn").click();
-  await expect(page.locator(".session-status")).toHaveText("Preparing.");
-
-  const animationName = await page.locator(".glyph").evaluate((node) => getComputedStyle(node).animationName);
+  // Controls group is the only CSS-animated element that remains on screen
+  const animationName = await page.locator(".controls-group").evaluate(
+    (node) => getComputedStyle(node).animationName
+  );
   expect(animationName).toBe("none");
 });

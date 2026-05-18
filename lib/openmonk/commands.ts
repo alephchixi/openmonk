@@ -68,6 +68,9 @@ export function parseCommand(input: string): ParseResult {
       if (!alias) {
         return { error: true, message: `Unknown flag: ${token}.` };
       }
+      if (params[alias.key] !== undefined) {
+        return { error: true, message: `Conflicting flag: ${token} (already set ${alias.key}).` };
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (params as any)[alias.key] = alias.value;
       continue;

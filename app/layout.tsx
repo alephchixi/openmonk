@@ -20,6 +20,21 @@ export const metadata: Metadata = {
   title: "OpenMonk",
   description: "A non-discursive sound companion for repetition, breath, silence, and attention.",
   robots: "index, follow",
+  openGraph: {
+    title: "OpenMonk",
+    description: "A non-discursive sound companion for repetition, breath, silence, and attention.",
+    type: "website",
+    siteName: "OpenMonk",
+  },
+  twitter: {
+    card: "summary",
+    title: "OpenMonk",
+    description: "A non-discursive sound companion for repetition, breath, silence, and attention.",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

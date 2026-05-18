@@ -76,9 +76,8 @@ export function getAudioRoute(mode: OpenMonkMode): "speech" | "sound" | "none" {
 
 /**
  * Get the duration in seconds for sound generation API calls.
- * Active sound modes use a loopable 20-30 second source.
+ * Active sound modes use a loopable source — Air is tighter, Ear drifts more.
  */
 export function getSoundGenerationDuration(mode: OpenMonkMode): number {
-  void mode;
-  return 25;
+  return mode === "ear" ? 30 : 25;
 }

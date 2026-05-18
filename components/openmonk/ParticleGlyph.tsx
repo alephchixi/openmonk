@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, type RefObject } from "react";
 import type { OpenMonkMode } from "@/lib/openmonk/types";
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   active: boolean;
   elapsed?: number;
   duration?: number;
+  amplitudeRef?: RefObject<number>;
 };
 
 interface Particle {
@@ -28,6 +29,13 @@ interface Particle {
 function getComputedColor(prop: string): string {
   if (typeof window === "undefined") return "#e0e0e0";
   return getComputedStyle(document.documentElement).getPropertyValue(prop).trim() || "#e0e0e0";
+}
+
+// P3.4: Mode-specific glyph colors
+function getModeColor(mode: OpenMonkMode): string {
+  const varName = `--glyph-${mode}`;
+  const color = getComputedColor(varName);
+  return color !== "#e0e0e0" ? color : getComputedColor("--text");
 }
 
 function createParticle(cx: number, cy: number, mode: OpenMonkMode): Particle {
@@ -51,22 +59,36 @@ function createParticle(cx: number, cy: number, mode: OpenMonkMode): Particle {
 }
 
 function getParticleCount(mode: OpenMonkMode): number {
+  const reduced = typeof window !== "undefined"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (reduced) {
+    switch (mode) {
+      case "zen": return 1;
+      case "om": return 3;
+      case "air": return 18;
+      case "ear": return 24;
+      default: return 1;
+    }
+  }
+
   switch (mode) {
-    case "zen": return 1; // Single circle, not particles
-    case "om": return 3;  // Orbital dots
+    case "zen": return 1;
+    case "om": return 3;
     case "air": return 60;
     case "ear": return 80;
     default: return 1;
   }
 }
 
-export function ParticleGlyph({ mode, active, elapsed = 0, duration = 0 }: Props) {
+export function ParticleGlyph({ mode, active, elapsed = 0, duration = 0, amplitudeRef }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const particlesRef = useRef<Particle[]>([]);
   const timeRef = useRef(0);
   const modeRef = useRef(mode);
   const activeRef = useRef(active);
+  const amplitudeRefInternal = amplitudeRef;
 
   const progress = duration > 0 ? Math.min(elapsed / duration, 1) : 0;
 
@@ -244,13 +266,18 @@ export function ParticleGlyph({ mode, active, elapsed = 0, duration = 0 }: Props
     const cx = size / 2;
     const cy = size / 2;
 
+    // P2.5: check reduced-motion for speed multiplier
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const speedMul = prefersReduced ? 0.5 : 1;
+
     // Initialize particles for particle-based modes
     const count = getParticleCount(mode);
     if (mode === "air" || mode === "ear") {
       particlesRef.current = Array.from({ length: count }, () => createParticle(cx, cy, mode));
     }
 
-    timeRef.current = performance.now();
+    let lastFrameAt = performance.now();
+    timeRef.current = lastFrameAt;
 
     let running = true;
 
@@ -258,30 +285,47 @@ export function ParticleGlyph({ mode, active, elapsed = 0, duration = 0 }: Props
       if (!running || !ctx) return;
 
       const now = performance.now();
-      timeRef.current = now;
+      // P2.4: Clamp dt to 32ms to prevent particle snap on tab regain
+      const dt = Math.min(now - lastFrameAt, 32);
+      lastFrameAt = now;
+      // Use clamped time for smooth animation (avoid big jumps)
+      timeRef.current += dt * speedMul;
+      const t = timeRef.current;
       const currentMode = modeRef.current;
       const isActive = activeRef.current;
-      const textColor = getComputedColor("--text");
+      // P3.4: Use mode-specific color when active
+      const modeColor = isActive ? getModeColor(currentMode) : getComputedColor("--text");
+      // P3.12: Read amplitude for size modulation
+      const amp = amplitudeRefInternal?.current ?? 0;
+      const sizeMul = 1 + amp * 0.5;
 
       ctx.clearRect(0, 0, size, size);
-      ctx.fillStyle = textColor;
+      ctx.fillStyle = modeColor;
+
+      // Apply size scaling via transform
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(sizeMul, sizeMul);
+      ctx.translate(-cx, -cy);
 
       switch (currentMode) {
         case "zen":
-          drawZen(ctx, cx, cy, now, isActive, textColor);
+          drawZen(ctx, cx, cy, t, isActive, modeColor);
           break;
         case "om":
-          drawOm(ctx, cx, cy, now, isActive, textColor);
+          drawOm(ctx, cx, cy, t, isActive, modeColor);
           break;
         case "air":
-          drawAir(ctx, cx, cy, now, isActive, textColor, particlesRef.current);
+          drawAir(ctx, cx, cy, t, isActive, modeColor, particlesRef.current);
           break;
         case "ear":
-          drawEar(ctx, cx, cy, now, isActive, textColor, particlesRef.current);
+          drawEar(ctx, cx, cy, t, isActive, modeColor, particlesRef.current);
           break;
         default:
-          drawZen(ctx, cx, cy, now, isActive, textColor);
+          drawZen(ctx, cx, cy, t, isActive, modeColor);
       }
+
+      ctx.restore();
 
       animRef.current = requestAnimationFrame(draw);
     }
@@ -291,6 +335,8 @@ export function ParticleGlyph({ mode, active, elapsed = 0, duration = 0 }: Props
       if (document.hidden) {
         cancelAnimationFrame(animRef.current);
       } else if (running) {
+        // P2.4: Reset lastFrameAt so dt clamp prevents big jump
+        lastFrameAt = performance.now();
         animRef.current = requestAnimationFrame(draw);
       }
     }

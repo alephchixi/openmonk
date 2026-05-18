@@ -85,8 +85,11 @@ describe("getAudioRoute", () => {
 });
 
 describe("getSoundGenerationDuration", () => {
-  it("returns 25 for active sound modes", () => {
+  it("returns 25 for air mode", () => {
     expect(getSoundGenerationDuration("air")).toBe(25);
-    expect(getSoundGenerationDuration("ear")).toBe(25);
+  });
+
+  it("returns 30 for ear mode (richer loop)", () => {
+    expect(getSoundGenerationDuration("ear")).toBe(30);
   });
 });

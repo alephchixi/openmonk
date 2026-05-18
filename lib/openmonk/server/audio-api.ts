@@ -1,5 +1,9 @@
 // OpenMonk — Audio API Guards
 // Small server-side utilities for rate limits, timeouts, and generated audio cache.
+//
+// NOTE: numberFromEnv() reads process.env at request time (not module load).
+// This is intentional — tests rely on vi.stubEnv() after import. The cost is
+// negligible on Next.js serverless functions.
 
 import { NextRequest, NextResponse } from "next/server";
 import { stableStringify } from "../stable-json";
@@ -100,6 +104,7 @@ export async function readUpstreamError(response: Response): Promise<string> {
   return message;
 }
 
+// Callers must slice ArrayBuffer before passing to NextResponse if the buffer is reused (e.g. from cache).
 export function audioResponse(data: ArrayBuffer, contentType = "audio/mpeg"): NextResponse {
   return new NextResponse(data, {
     status: 200,

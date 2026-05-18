@@ -174,6 +174,9 @@ export function translateCommandError(message: string, language: UiLanguage): st
   const unknownArgument = message.match(/^Unknown argument: (.+)\.$/);
   if (unknownArgument) return `Argumento desconocido: ${unknownArgument[1]}.`;
 
+  const conflictingFlag = message.match(/^Conflicting flag: (.+) \(already set (.+)\)\.$/);
+  if (conflictingFlag) return `Parametro en conflicto: ${conflictingFlag[1]} (ya definido ${conflictingFlag[2]}).`;
+
   if (message === "Audio generation failed.") return "Fallo la generacion de audio.";
 
   return message;

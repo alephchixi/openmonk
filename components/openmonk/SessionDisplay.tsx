@@ -8,6 +8,7 @@ type Props = {
   status?: AllowedStatusPhrase;
   elapsed: number;
   duration: number;
+  durationMin?: number;
   copy: UiCopy;
 };
 
@@ -17,7 +18,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-export function SessionDisplay({ state, status, elapsed, duration, copy }: Props) {
+export function SessionDisplay({ state, status, elapsed, duration, durationMin, copy }: Props) {
   const showTimer = state === "playing" || state === "silent" || state === "paused";
   const remaining = Math.max(0, duration - elapsed);
   const statusText = status ? copy.status[status] : "";
@@ -28,6 +29,16 @@ export function SessionDisplay({ state, status, elapsed, duration, copy }: Props
         <div className="session-timer" aria-label={`${formatTime(remaining)} ${copy.remaining}`}>
           {formatTime(remaining)}
         </div>
+      )}
+
+      {/* P2.12: Preview duration before session starts */}
+      {state === "idle" && durationMin !== undefined && durationMin > 0 && (
+        <div className="session-preview">~ {formatTime(durationMin * 60)}</div>
+      )}
+
+      {/* P2.3: Breathing dot during preparing state */}
+      {state === "preparing" && (
+        <div className="preparing-dot" aria-hidden="true">●</div>
       )}
 
       {status && state !== "idle" && (

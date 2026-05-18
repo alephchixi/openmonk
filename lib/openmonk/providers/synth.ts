@@ -249,6 +249,13 @@ export async function generateSynthAudio(request: ProviderRequest): Promise<Prov
   const cacheKey = stableStringify({ mode, params });
   let cached = synthCache.get(cacheKey);
 
+  if (cached) {
+    // LRU: move to most-recent position
+    synthCache.delete(cacheKey);
+    synthCache.set(cacheKey, cached);
+    return cached;
+  }
+
   if (!cached) {
     if (synthCache.size >= SYNTH_CACHE_MAX_ENTRIES) {
       const oldestKey = synthCache.keys().next().value;

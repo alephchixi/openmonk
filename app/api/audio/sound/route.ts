@@ -19,7 +19,7 @@ import {
 
 const RequestSchema = z.object({
   mode: z.enum(["air", "ear"]),
-  durationSeconds: z.number().int().min(0).max(3600),
+  durationSeconds: z.number().int().min(60).max(3600),
   params: z.object({
     density: z.enum(["sparse", "regular", "dense"]).optional(),
     distance: z.enum(["near", "room", "far"]).optional(),

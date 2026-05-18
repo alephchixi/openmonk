@@ -5,7 +5,7 @@ import type { OpenMonkMode, OpenMonkParams, OpenMonkSession } from "@/lib/openmo
 import { MODE_DEFAULTS } from "@/lib/openmonk/constants";
 import { createSession, transitionSession } from "@/lib/openmonk/session";
 import { getAudioRoute } from "@/lib/openmonk/audio-prompts";
-import { OpenMonkAudioEngine } from "@/lib/openmonk/audio-engine";
+import { OpenMonkAudioEngine, AudioUnavailableError } from "@/lib/openmonk/audio-engine";
 import { parseCommand, isParseError, resolveDuration } from "@/lib/openmonk/commands";
 import { generateAudio } from "@/lib/openmonk/providers";
 import type { AudioProvider } from "@/lib/openmonk/providers/types";
@@ -17,6 +17,7 @@ import { ParticleGlyph } from "./ParticleGlyph";
 import { SessionDisplay } from "./SessionDisplay";
 import { CommandInput } from "./CommandInput";
 import { InfoModal } from "./InfoModal";
+import { SettingsSheet } from "./SettingsSheet";
 
 export function OpenMonkPanel() {
   const [selectedMode, setSelectedMode] = useState<OpenMonkMode>("zen");
@@ -26,11 +27,14 @@ export function OpenMonkPanel() {
   const [session, setSession] = useState<OpenMonkSession | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [engine] = useState(() => new OpenMonkAudioEngine());
-  const [volume] = useState(0.7);
-  const [muted] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [muted, setMuted] = useState(false);
   const [commandError, setCommandError] = useState("");
   const [showInfo, setShowInfo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [language, setLanguage] = useState<UiLanguage>("en");
+  const [isDark, setIsDark] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
 
   const sessionRef = useRef<OpenMonkSession | null>(null);
   const engineRef = useRef(engine);
@@ -38,23 +42,89 @@ export function OpenMonkPanel() {
   const endTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const operationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const persistDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instrumentRef = useRef<HTMLDivElement | null>(null);
+  const amplitudeRef = useRef(0);
 
   const isActive = session !== null && session.state !== "idle" && session.state !== "complete" && session.state !== "error";
   const copy = UI_COPY[language];
 
   useEffect(() => { sessionRef.current = session; }, [session]);
 
+  // P3.12: Amplitude polling for particle reactivity
+  useEffect(() => {
+    if (!isActive) return;
+    let running = true;
+    function poll() {
+      if (!running) return;
+      amplitudeRef.current = engineRef.current.getAmplitude();
+      requestAnimationFrame(poll);
+    }
+    poll();
+    return () => { running = false; };
+  }, [isActive]);
+
+  // Hydrate persisted state
   useEffect(() => {
     const stored = window.localStorage.getItem("openmonk-language");
     if (stored === "en" || stored === "es") setLanguage(stored);
+
+    const storedTheme = window.localStorage.getItem("openmonk-theme");
+    if (storedTheme === "light") {
+      document.documentElement.classList.add("light");
+      setIsDark(false);
+    } else if (storedTheme === "dark") {
+      document.documentElement.classList.remove("light");
+      setIsDark(true);
+    }
+
+    const storedMode = window.localStorage.getItem("openmonk-last-mode");
+    if (storedMode && ["zen", "om", "air", "ear"].includes(storedMode)) {
+      setSelectedMode(storedMode as OpenMonkMode);
+      const storedParams = window.localStorage.getItem("openmonk-last-params");
+      if (storedParams) {
+        try {
+          setParams(JSON.parse(storedParams));
+        } catch { /* use defaults */ }
+      } else {
+        setParams(MODE_DEFAULTS[storedMode as OpenMonkMode].params);
+      }
+    }
+    const storedDuration = window.localStorage.getItem("openmonk-last-duration");
+    if (storedDuration) {
+      const dur = parseInt(storedDuration, 10);
+      if (dur > 0 && dur <= 60) setDurationMin(dur);
+    }
   }, []);
 
-  // Theme toggle on background click
+  // Persist settings (debounced)
+  const persistSettings = useCallback((mode: OpenMonkMode, dur: number, p: OpenMonkParams) => {
+    if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current);
+    persistDebounceRef.current = setTimeout(() => {
+      window.localStorage.setItem("openmonk-last-mode", mode);
+      window.localStorage.setItem("openmonk-last-duration", String(dur));
+      window.localStorage.setItem("openmonk-last-params", JSON.stringify(p));
+    }, 200);
+  }, []);
+
+  const handleThemeToggle = useCallback(() => {
+    const isCurrentlyLight = document.documentElement.classList.contains("light");
+    if (isCurrentlyLight) {
+      document.documentElement.classList.remove("light");
+      window.localStorage.setItem("openmonk-theme", "dark");
+      setIsDark(true);
+    } else {
+      document.documentElement.classList.add("light");
+      window.localStorage.setItem("openmonk-theme", "light");
+      setIsDark(false);
+    }
+  }, []);
+
   function handleBackgroundClick(e: React.MouseEvent<HTMLDivElement>) {
     const target = e.target as HTMLElement;
-    if (target.closest("button, input, a, .modal-overlay")) return;
+    if (target.closest("button, input, a, .modal-overlay, .settings-overlay")) return;
     if (target !== e.currentTarget && !target.classList.contains("particle-canvas-wrapper") && !target.classList.contains("particle-canvas")) return;
-    document.documentElement.classList.toggle("light");
+    handleThemeToggle();
   }
 
   const clearEndTimeout = useCallback(() => {
@@ -68,6 +138,7 @@ export function OpenMonkPanel() {
     engineRef.current.stop({ fadeOutMs: 2000 });
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     clearEndTimeout();
+    setIsPaused(false);
     setSession((prev) => {
       if (!prev) return null;
       if (sessionId && prev.id !== sessionId) return prev;
@@ -84,6 +155,7 @@ export function OpenMonkPanel() {
     engineRef.current.stop({ fadeOutMs: 0 });
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     clearEndTimeout();
+    setIsPaused(false);
     setSession((prev) => {
       if (!prev) return null;
       const result = transitionSession(prev, "stop");
@@ -92,9 +164,35 @@ export function OpenMonkPanel() {
     });
   }, [clearEndTimeout]);
 
+  // P3.2: Pause/Resume
+  const handlePause = useCallback(() => {
+    engine.pause();
+    setIsPaused(true);
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, [engine]);
+
+  const handleResume = useCallback(() => {
+    engine.resume();
+    setIsPaused(false);
+    // Restart timer
+    timerRef.current = setInterval(() => {
+      setElapsed((prev) => {
+        const next = prev + 1;
+        const cur = sessionRef.current;
+        if (cur && next >= cur.durationSeconds) {
+          engineRef.current.stop({ fadeOutMs: 2000 });
+          endTimeoutRef.current = setTimeout(() => completeSession(cur.id), 2000);
+          if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+          return cur.durationSeconds;
+        }
+        return next;
+      });
+    }, 1000);
+  }, [engine, completeSession]);
+
   // Timer
   useEffect(() => {
-    if (!session || !isActive) {
+    if (!session || !isActive || isPaused) {
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
       return;
     }
@@ -106,7 +204,9 @@ export function OpenMonkPanel() {
         const next = prev + 1;
         const cur = sessionRef.current;
         if (cur && next >= cur.durationSeconds) {
-          setTimeout(() => completeSession(cur.id), 0);
+          engineRef.current.stop({ fadeOutMs: 2000 });
+          endTimeoutRef.current = setTimeout(() => completeSession(cur.id), 2000);
+          if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
           return cur.durationSeconds;
         }
         return next;
@@ -114,15 +214,26 @@ export function OpenMonkPanel() {
     }, 1000);
 
     return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
-  }, [session?.id, isActive, completeSession]);
+  }, [session?.id, isActive, isPaused, completeSession]);
 
-  // Escape
+  // Escape to stop + Enter to begin
   useEffect(() => {
-    if (!isActive) return;
-    function onKeyDown(e: KeyboardEvent) { if (e.key === "Escape") stopSession(); }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isActive) {
+        stopSession();
+        return;
+      }
+      if (e.key === "Enter" && !isActive) {
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+        e.preventDefault();
+        const durationSec = durationMin * 60;
+        void beginSession(selectedMode, durationSec, params);
+      }
+    }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isActive, stopSession]);
+  }, [isActive, stopSession, selectedMode, durationMin, params]);
 
   // Cleanup
   useEffect(() => {
@@ -135,13 +246,39 @@ export function OpenMonkPanel() {
     };
   }, [clearEndTimeout]);
 
+  // Modal inert
+  useEffect(() => {
+    const el = instrumentRef.current;
+    if (!el) return;
+    if (showInfo || showSettings) {
+      el.setAttribute("inert", "");
+    } else {
+      el.removeAttribute("inert");
+    }
+  }, [showInfo, showSettings]);
+
+  // Volume/mute handlers for settings
+  const handleVolumeChange = useCallback((v: number) => {
+    setVolume(v);
+    engine.setVolume(v);
+  }, [engine]);
+
+  const handleMuteToggle = useCallback(() => {
+    setMuted((prev) => {
+      if (prev) { engine.unmute(); } else { engine.mute(); }
+      return !prev;
+    });
+  }, [engine]);
+
   const handleModeChange = useCallback((mode: OpenMonkMode) => {
     setSelectedMode(mode);
     setParams(MODE_DEFAULTS[mode].params);
     const defaultDur = MODE_DEFAULTS[mode].durationSeconds;
-    setDurationMin(defaultDur > 0 ? defaultDur / 60 : 5);
+    const dur = defaultDur > 0 ? defaultDur / 60 : 5;
+    setDurationMin(dur);
     setCommandError("");
-  }, []);
+    persistSettings(mode, dur, MODE_DEFAULTS[mode].params);
+  }, [persistSettings]);
 
   const handleLanguageToggle = useCallback(() => {
     setLanguage((current) => {
@@ -152,8 +289,17 @@ export function OpenMonkPanel() {
   }, []);
 
   const handleParamChange = useCallback((key: keyof OpenMonkParams, value: string) => {
-    setParams((prev) => ({ ...prev, [key]: value }));
-  }, []);
+    setParams((prev) => {
+      const next = { ...prev, [key]: value };
+      persistSettings(selectedMode, durationMin, next);
+      return next;
+    });
+  }, [selectedMode, durationMin, persistSettings]);
+
+  const handleDurationChange = useCallback((dur: number) => {
+    setDurationMin(dur);
+    persistSettings(selectedMode, dur, params);
+  }, [selectedMode, params, persistSettings]);
 
   const beginSession = useCallback(async (
     mode: OpenMonkMode,
@@ -163,6 +309,7 @@ export function OpenMonkPanel() {
     operationRef.current++;
     abortRef.current?.abort();
     clearEndTimeout();
+    setIsPaused(false);
 
     const operationId = operationRef.current;
     const controller = new AbortController();
@@ -195,9 +342,12 @@ export function OpenMonkPanel() {
         durationSeconds,
         params: sessionParams,
         signal: controller.signal,
+        decode: engine.decode.bind(engine),
       });
 
       if (operationRef.current !== operationId || controller.signal.aborted) return;
+
+      if (controller.signal.aborted) return;
 
       await engine.start(result.buffer, {
         loop: result.loop,
@@ -206,7 +356,7 @@ export function OpenMonkPanel() {
       });
 
       if (operationRef.current !== operationId || controller.signal.aborted) {
-        await engine.stop({ fadeOutMs: 0 });
+        engine.stop({ fadeOutMs: 0 });
         return;
       }
 
@@ -219,14 +369,17 @@ export function OpenMonkPanel() {
     } catch (err) {
       if (operationRef.current !== operationId || controller.signal.aborted) return;
       console.error("[OpenMonk]", err);
-      setCommandError(err instanceof Error ? err.message : "Audio generation failed.");
+      const errorMessage = err instanceof AudioUnavailableError
+        ? err.message
+        : err instanceof Error ? err.message : "Audio generation failed.";
+      setCommandError(errorMessage);
       const errResult = transitionSession(newSession, "error");
       if (errResult) { newSession.state = errResult.state; newSession.status = errResult.status; }
       setSession({ ...newSession });
     } finally {
       if (operationRef.current === operationId) abortRef.current = null;
     }
-  }, [provider, volume, muted, engine, completeSession, clearEndTimeout]);
+  }, [provider, volume, muted, engine]);
 
   const handleBegin = useCallback(() => {
     const durationSec = durationMin * 60;
@@ -246,87 +399,143 @@ export function OpenMonkPanel() {
   }, [beginSession]);
 
   return (
-    <div className="instrument" onClick={handleBackgroundClick}>
-      <h1 className="instrument-heading">
-        <button
-          type="button"
-          className="instrument-title"
-          onClick={() => setShowInfo(true)}
-          aria-haspopup="dialog"
-        >
-          OpenMonk
-        </button>
-      </h1>
-
-      <ParticleGlyph
-        mode={isActive ? (session?.mode ?? selectedMode) : selectedMode}
-        active={isActive}
-        elapsed={elapsed}
-        duration={session?.durationSeconds ?? 0}
-      />
-
-      <SessionDisplay
-        state={session?.state ?? "idle"}
-        status={session?.status}
-        elapsed={elapsed}
-        duration={session?.durationSeconds ?? 0}
-        copy={copy}
-      />
-
-      {!isActive && (
-        <>
-          <ModeSelector selected={selectedMode} onChange={handleModeChange} copy={copy} />
-
-          <div className="controls-group">
-            <ParameterControls
-              mode={selectedMode}
-              durationMin={durationMin}
-              params={params}
-              onDurationChange={setDurationMin}
-              onParamChange={handleParamChange}
-              copy={copy}
-            />
-            <ProviderSelector selected={provider} onChange={setProvider} copy={copy} />
-          </div>
-
-          <button type="button" className="begin-btn" onClick={handleBegin} id="begin-btn">
-            <span className="begin-glow" aria-hidden="true" />
-            {copy.begin}
+    <>
+      <div className="instrument" onClick={handleBackgroundClick} ref={instrumentRef}>
+        <h1 className="instrument-heading">
+          <button
+            type="button"
+            className="instrument-title"
+            onClick={() => setShowInfo(true)}
+            aria-haspopup="dialog"
+          >
+            OpenMonk
           </button>
-        </>
-      )}
+        </h1>
 
-      {isActive && (
-        <button
-          type="button"
-          className="stop-btn"
-          onClick={stopSession}
-          id="stop-btn"
-          aria-label={copy.stopSession}
-        >
-          {copy.stop}
-        </button>
-      )}
+        <ParticleGlyph
+          mode={isActive ? (session?.mode ?? selectedMode) : selectedMode}
+          active={isActive && !isPaused}
+          elapsed={elapsed}
+          duration={session?.durationSeconds ?? 0}
+          amplitudeRef={amplitudeRef}
+        />
 
-      <div className="footer-area">
-        <CommandInput
-          onSubmit={handleCommand}
-          error={translateCommandError(commandError, language)}
-          disabled={isActive}
+        <SessionDisplay
+          state={isPaused ? "paused" : (session?.state ?? "idle")}
+          status={isPaused ? "Paused." : session?.status}
+          elapsed={elapsed}
+          duration={session?.durationSeconds ?? 0}
+          durationMin={durationMin}
           copy={copy}
         />
 
-        <button
-          type="button"
-          className="language-toggle"
-          onClick={handleLanguageToggle}
-          aria-label={copy.languageToggleLabel}
-        >
-          {copy.languageToggle}
-        </button>
+        {!isActive && (
+          <>
+            <ModeSelector selected={selectedMode} onChange={handleModeChange} copy={copy} />
+
+            <div className="controls-group">
+              <ParameterControls
+                mode={selectedMode}
+                durationMin={durationMin}
+                params={params}
+                onDurationChange={handleDurationChange}
+                onParamChange={handleParamChange}
+                copy={copy}
+              />
+              <ProviderSelector selected={provider} onChange={setProvider} copy={copy} />
+            </div>
+
+            <button type="button" className="begin-btn" onClick={handleBegin} id="begin-btn">
+              <span className="begin-glow" aria-hidden="true" />
+              {copy.begin}
+            </button>
+          </>
+        )}
+
+        {isActive && (
+          <div className="active-controls">
+            {!isPaused && session?.mode !== "zen" && (
+              <button
+                type="button"
+                className="pause-btn"
+                onClick={handlePause}
+                aria-label="Pause session"
+              >
+                ❚❚
+              </button>
+            )}
+            {isPaused && (
+              <button
+                type="button"
+                className="resume-btn"
+                onClick={handleResume}
+                aria-label="Resume session"
+              >
+                ▶
+              </button>
+            )}
+            <button
+              type="button"
+              className="stop-btn"
+              onClick={stopSession}
+              id="stop-btn"
+              aria-label={copy.stopSession}
+            >
+              {copy.stop}
+            </button>
+          </div>
+        )}
+
+        <div className="footer-area">
+          <CommandInput
+            onSubmit={handleCommand}
+            error={translateCommandError(commandError, language)}
+            disabled={isActive}
+            copy={copy}
+          />
+
+          <div className="footer-toggles">
+            <button
+              type="button"
+              className="language-toggle"
+              onClick={handleLanguageToggle}
+              aria-label={copy.languageToggleLabel}
+            >
+              {copy.languageToggle}
+            </button>
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={handleThemeToggle}
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {isDark ? "☀" : "☾"}
+            </button>
+            <button
+              type="button"
+              className="settings-trigger"
+              onClick={() => setShowSettings(true)}
+              aria-label="Open settings"
+            >
+              ⚙
+            </button>
+          </div>
+        </div>
       </div>
 
-      <InfoModal open={showInfo} onClose={() => setShowInfo(false)} copy={copy} />
-    </div>
+      <InfoModal open={showInfo} onClose={() => setShowInfo(false)} copy={copy} language={language} onCommand={handleCommand} />
+      <SettingsSheet
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        volume={volume}
+        onVolumeChange={handleVolumeChange}
+        muted={muted}
+        onMuteToggle={handleMuteToggle}
+        isDark={isDark}
+        onThemeToggle={handleThemeToggle}
+        language={language}
+        onLanguageToggle={handleLanguageToggle}
+      />
+    </>
   );
 }

@@ -9,6 +9,7 @@ export type ProviderRequest = {
   durationSeconds: number;
   params: OpenMonkParams;
   signal?: AbortSignal;
+  decode?: (arrayBuffer: ArrayBuffer) => Promise<AudioBuffer>;
 };
 
 export type ProviderResult = {

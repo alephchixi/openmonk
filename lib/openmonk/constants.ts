@@ -27,25 +27,7 @@ export const ALLOWED_STATUS_PHRASES: AllowedStatusPhrase[] = [
   "Preparing.",
 ];
 
-// Mode → Unicode glyph mapping
-export const MODE_GLYPHS: Record<OpenMonkMode, string> = {
-  zen: "◌",
-  om: "◉",
-  air: "∿",
-  ear: "⋯",
-  mauna: "□",
-  vow: "▢",
-};
 
-// Mode → CSS animation class
-export const MODE_ANIMATIONS: Record<OpenMonkMode, string> = {
-  zen: "anim-hold",
-  om: "anim-pulse",
-  air: "anim-breathwave",
-  ear: "anim-flicker",
-  mauna: "anim-static",
-  vow: "anim-static",
-};
 
 // Default parameters per mode
 export const MODE_DEFAULTS: Record<OpenMonkMode, { durationSeconds: number; params: OpenMonkParams }> = {
