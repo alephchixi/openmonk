@@ -12,17 +12,24 @@ The local provider keeps the instrument usable without an API key or network lat
 ## Voice Material (OM)
 
 - Generated via ElevenLabs text-to-speech streaming endpoint.
-- Input text is a controlled template: `"ommm... ommm..."` with spacing controlled by density parameter.
-- Voice settings: high stability (0.8), low similarity boost (0.5), no style, no speaker boost.
+- Input text is a controlled A-U-M source gesture.
+- After decode, the client samples the nasal tail and extends it into an 18 second M sustain before looping.
+- Voice settings: high stability (0.9), high similarity boost (0.8), no style, no speaker boost.
+- Voice ID: required from `ELEVENLABS_OM_VOICE_ID`; no default public voice fallback.
 - Primary model: `eleven_v3`. Fallback: `eleven_multilingual_v2`.
-- If TTS produces speech-like artifacts, switch to sound generation endpoint with a drone prompt.
 
-## Sound Material (Air, Ear)
+## Voice Material (Air)
+
+- Generated via the same ElevenLabs text-to-speech streaming endpoint.
+- Input text uses controlled breath syllables only (`haaaaaah`, `hooooooh`) so the model produces a breath-like vocal loop without spoken instructions.
+- The local mock provider remains a Web Audio breath pulse.
+
+## Sound Material (Ear)
 
 - Generated via ElevenLabs sound generation endpoint.
 - Model: `eleven_text_to_sound_v2`.
 - Prompt templates are controlled server-side. No user text reaches the API.
-- Air/Ear/Drone: 20–30 seconds. Looped client-side with Web Audio fades.
+- Ear source clips are 30 seconds and prompted as evolving abstract soundscapes. Looped client-side with Web Audio fades.
 
 ## Playback
 
@@ -36,8 +43,8 @@ The local provider keeps the instrument usable without an API key or network lat
 ## Caching
 
 - Browser Cache API with SHA-256 keys.
-- Key inputs: route, mode, duration bucket, params, model.
-- Cache keys use deterministic deep serialization so nested params such as mood and texture cannot collide.
+- Key inputs: route, mode, duration bucket, curated mode params, model.
+- Cache keys use deterministic deep serialization so internal params cannot collide.
 - ElevenLabs responses are also cached in bounded server memory for repeated identical prompts.
 - No mic data stored. No private context cached.
 

@@ -13,25 +13,20 @@ Sustained synthetic vocal drone. Low, distant, non-verbal.
 ## Allowed Inputs
 
 ```
-/om [duration_minutes] [--pitch] [--density] [--distance] [--texture]
+/om [duration_minutes]
 ```
 
 Duration: 1, 3, 5, 15, 30, or 60 minutes. Default: 5.
 
-Parameters:
-- Pitch: `--low`, `--mid`, `--high`, `--adaptive`. Default: low.
-- Density: `--sparse`, `--regular`, `--dense`. Default: sparse.
-- Distance: `--near`, `--room`, `--far`. Default: far.
-- Texture: `--clean`, `--breathy`, `--granular`, `--resonant`. Default: breathy.
-
 ## Behavior
 
-1. Generate OM-like vocal/drone via API.
+1. Generate OM-like vocal/drone via local synthesis or the configured voice API.
 2. Decode audio.
-3. Loop with long fade-in (2s).
-4. Run for specified duration.
-5. Fade out (3s).
-6. Status: `Session complete.`
+3. Sustain the nasal M tail into a 15-20 second mantra loop.
+4. Loop with long fade-in (2s).
+5. Run for specified duration.
+6. Fade out (3s).
+7. Status: `Session complete.`
 
 ## Allowed Outputs
 
@@ -56,6 +51,6 @@ Parameters:
 ## Examples
 
 ```
-/om 5 --low --sparse --far
+/om 5
 → Preparing. → [drone starts, fading in] → [05:00 countdown] → [fade out] → Session complete.
 ```

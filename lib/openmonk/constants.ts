@@ -37,7 +37,7 @@ export const MODE_DEFAULTS: Record<OpenMonkMode, { durationSeconds: number; para
   },
   om: {
     durationSeconds: 300,
-    params: { pitch: "low", density: "sparse", distance: "far", texture: "breathy", stability: "stable" },
+    params: {},
   },
   air: {
     durationSeconds: 300,
@@ -66,24 +66,3 @@ export const DEFAULT_SFX_MODEL = "eleven_text_to_sound_v2";
 export const DEFAULT_FADE_IN_MS = 2000;
 export const DEFAULT_FADE_OUT_MS = 3000;
 export const DEFAULT_VOLUME = 0.7;
-
-// Flag aliases for command parser
-export const FLAG_ALIASES: Record<string, { key: keyof OpenMonkParams; value: string }> = {
-  "--low": { key: "pitch", value: "low" },
-  "--mid": { key: "pitch", value: "mid" },
-  "--high": { key: "pitch", value: "high" },
-  "--adaptive": { key: "pitch", value: "adaptive" },
-  "--sparse": { key: "density", value: "sparse" },
-  "--regular": { key: "density", value: "regular" },
-  "--dense": { key: "density", value: "dense" },
-  "--near": { key: "distance", value: "near" },
-  "--room": { key: "distance", value: "room" },
-  "--far": { key: "distance", value: "far" },
-  "--clean": { key: "texture", value: "clean" },
-  "--breathy": { key: "texture", value: "breathy" },
-  "--granular": { key: "texture", value: "granular" },
-  "--resonant": { key: "texture", value: "resonant" },
-  "--stable": { key: "stability", value: "stable" },
-  "--wavering": { key: "stability", value: "wavering" },
-  "--dissolving": { key: "stability", value: "dissolving" },
-};

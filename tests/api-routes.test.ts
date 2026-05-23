@@ -39,6 +39,7 @@ function audioFetchResponse(bytes = [1, 2, 3]): Response {
 beforeEach(() => {
   resetAudioApiStateForTests();
   vi.stubEnv("ELEVENLABS_API_KEY", "test-key");
+  vi.stubEnv("ELEVENLABS_OM_VOICE_ID", "voice-id");
   vi.stubEnv("ELEVENLABS_TTS_MODEL", "primary-model");
   vi.stubEnv("ELEVENLABS_TTS_FALLBACK_MODEL", "fallback-model");
   vi.stubEnv("OPENMONK_AUDIO_RATE_LIMIT", "100");
@@ -91,7 +92,23 @@ describe("POST /api/audio/speech", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("audio/mpeg");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/voice-id/stream");
     expect(fetchMock.mock.calls[1][1]?.body).toContain("fallback-model");
+  });
+
+  it("generates breath material through the configured voice", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(audioFetchResponse([5, 5, 5]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await speechPost(jsonRequest("/api/audio/speech", {
+      mode: "air",
+      durationSeconds: 300,
+      params: {},
+    }));
+
+    expect(response.status).toBe(200);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/voice-id/stream");
+    expect(fetchMock.mock.calls[0][1]?.body).toContain("haaaaaah");
   });
 
   it("returns 504 when upstream generation times out", async () => {
@@ -112,6 +129,17 @@ describe("POST /api/audio/sound", () => {
   it("rejects invalid modes", async () => {
     const response = await soundPost(jsonRequest("/api/audio/sound", {
       mode: "zen",
+      durationSeconds: 300,
+      params: {},
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid parameters." });
+  });
+
+  it("rejects air because breath mode uses the speech route", async () => {
+    const response = await soundPost(jsonRequest("/api/audio/sound", {
+      mode: "air",
       durationSeconds: 300,
       params: {},
     }));
@@ -144,7 +172,7 @@ describe("POST /api/audio/sound", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const body = {
-      mode: "air",
+      mode: "ear",
       durationSeconds: 300,
       params: {},
     };

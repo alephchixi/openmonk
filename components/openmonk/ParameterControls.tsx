@@ -23,11 +23,9 @@ function getVisibleControls(mode: OpenMonkMode) {
     case "zen":
       return { duration: true, density: false, distance: false, texture: false };
     case "om":
-      return { duration: true, density: true, distance: true, texture: true };
     case "air":
-      return { duration: true, density: true, distance: false, texture: true };
     case "ear":
-      return { duration: true, density: true, distance: false, texture: true };
+      return { duration: true, density: false, distance: false, texture: false };
     default:
       return { duration: true, density: false, distance: false, texture: false };
   }

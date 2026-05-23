@@ -51,9 +51,9 @@ OpenMonk is an open synthetic vocal instrument for contemplative listening. It p
 
 ```
 /zen [duration_minutes]
-/om [duration_minutes] [--pitch] [--density] [--distance] [--texture]
-/air
-/ear [+mood:token]
+/om [duration_minutes]
+/air [duration_minutes]
+/ear [duration_minutes]
 /mauna           (Phase 6)
 /vow "text"      (Phase 6)
 /return           (Phase 6)
@@ -61,7 +61,7 @@ OpenMonk is an open synthetic vocal instrument for contemplative listening. It p
 
 ## Session Anatomy
 
-1. User selects mode and parameters, or enters a slash command.
+1. User selects mode and duration, or enters a slash command.
 2. User presses Begin or submits command.
 3. System transitions to preparing state.
 4. Audio is generated (if applicable) or silence begins.

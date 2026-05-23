@@ -10,7 +10,7 @@ OpenMonk uses OM as a phonetic vowel material, not as a sacred symbol. It does n
 
 ## No Emotional Diagnosis
 
-The system never infers user emotional state. Mood input (`+mood:tired`, etc.) is explicitly declared by the user from an allowlist. The system does not respond with "you seem anxious" or equivalent.
+The system never infers user emotional state. The system does not respond with "you seem anxious" or equivalent.
 
 ## Microphone Consent
 
@@ -34,7 +34,6 @@ No voice cloning is permitted in MVP. Future voice cloning requires:
 
 - Audio prompts are built from controlled server-side templates.
 - User text is never passed to ElevenLabs as a prompt.
-- Mood tokens are validated against an allowlist.
 - Prompt injection patterns are rejected.
 
 ## Public Release Hygiene

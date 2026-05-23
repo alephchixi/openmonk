@@ -17,9 +17,9 @@ You can type a command, press Enter, and listen. When it stops, it stops.
 | Mode | Command | Description |
 |------|---------|-------------|
 | Zen | `/zen 5` | Silent timer |
-| OM | `/om 5 --low --sparse --far` | Sustained vocal drone |
-| Air | `/air 3 --breathy` | Breath-like reference pulse |
-| Ear | `/ear 15 --granular` | Abstract soundscape |
+| OM | `/om 5` | Sustained vocal drone |
+| Air | `/air 3` | Breath-like reference pulse |
+| Ear | `/ear 15` | Abstract soundscape |
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ Open `http://localhost:4444`.
 
 ```bash
 cp .env.example .env
-# Add your ELEVENLABS_API_KEY to .env
+# Add ELEVENLABS_API_KEY and ELEVENLABS_OM_VOICE_ID to .env
 ```
 
 Without an API key, OpenMonk runs entirely client-side using the built-in Web Audio synthesizer.
@@ -47,9 +47,9 @@ Type in the command input to start sessions immediately:
 
 ```
 /zen 1 | 3 | 5 | 15 | 30 | 60
-/om 5 --low --sparse --far --breathy
-/air 3 --granular
-/ear 15 --resonant
+/om 5
+/air 3
+/ear 15
 ```
 
 ## Parameters
@@ -57,10 +57,7 @@ Type in the command input to start sessions immediately:
 | Param | Values |
 |-------|--------|
 | Duration | 1, 3, 5, 15, 30, 60 min |
-| Pitch | `--low` `--mid` `--high` |
-| Density | `--sparse` `--regular` `--dense` |
-| Distance | `--near` `--room` `--far` |
-| Texture | `--clean` `--breathy` `--granular` `--resonant` |
+| Audio provider | Mock audio or synthetic voice |
 
 ## Don't
 

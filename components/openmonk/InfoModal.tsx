@@ -13,23 +13,16 @@ type Props = {
 
 const COMMANDS_EN = [
   { cmd: "/zen 5", desc: "5 min silent timer" },
-  { cmd: "/om 10 --low --sparse", desc: "10 min drone, low pitch, sparse" },
-  { cmd: "/air 3 --breathy", desc: "3 min breath pulse" },
-  { cmd: "/ear 15 --granular", desc: "15 min mood soundscape" },
+  { cmd: "/om 10", desc: "10 min vocal drone" },
+  { cmd: "/air 3", desc: "3 min breath pulse" },
+  { cmd: "/ear 15", desc: "15 min mood soundscape" },
 ];
 
 const COMMANDS_ES = [
   { cmd: "/zen 5", desc: "temporizador silencioso 5 min" },
-  { cmd: "/om 10 --low --sparse", desc: "drone 10 min, tono bajo, escaso" },
-  { cmd: "/air 3 --breathy", desc: "pulso de aire 3 min" },
-  { cmd: "/ear 15 --granular", desc: "paisaje sonoro 15 min" },
-];
-
-const FLAGS = [
-  { flag: "--low / --mid / --high", desc: "pitch" },
-  { flag: "--sparse / --regular / --dense", desc: "density" },
-  { flag: "--near / --room / --far", desc: "distance" },
-  { flag: "--clean / --breathy / --granular / --resonant", desc: "texture" },
+  { cmd: "/om 10", desc: "drone vocal 10 min" },
+  { cmd: "/air 3", desc: "pulso de aire 3 min" },
+  { cmd: "/ear 15", desc: "paisaje sonoro 15 min" },
 ];
 
 export function InfoModal({ open, onClose, copy, language, onCommand }: Props) {
@@ -110,15 +103,6 @@ export function InfoModal({ open, onClose, copy, language, onCommand }: Props) {
                 <code className="cheatsheet-cmd">{c.cmd}</code>
                 <span className="cheatsheet-desc">{c.desc}</span>
               </button>
-            ))}
-          </div>
-          <h3 className="cheatsheet-title">{isSpanish ? "Parámetros" : "Flags"}</h3>
-          <div className="cheatsheet-list">
-            {FLAGS.map((f) => (
-              <div key={f.flag} className="cheatsheet-row">
-                <code className="cheatsheet-cmd">{f.flag}</code>
-                <span className="cheatsheet-desc">{f.desc}</span>
-              </div>
             ))}
           </div>
         </div>

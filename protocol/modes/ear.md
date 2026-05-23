@@ -8,26 +8,22 @@ status: active
 
 ## Purpose
 
-Abstract soundscape mapped to declared mood. User declares mood, system does not infer.
+Abstract soundscape. The system does not infer user state.
 
 ## Allowed Inputs
 
 ```
-/ear [+mood:token]
+/ear [duration_minutes]
 ```
 
-Allowed mood tokens: `tired`, `foggy`, `soft`, `overloaded`, `late`, `neutral`.
-
-Duration: default 5 minutes. Density and texture may be specified.
+Duration: 1, 3, 5, 15, 30, or 60 minutes. Default: 5.
 
 ## Behavior
 
-1. Validate mood token against allowlist.
-2. Map mood to abstract sound parameters.
-3. Generate soundscape via sound API.
-4. Loop with fade-in.
-5. Run for duration.
-6. Fade out.
+1. Generate soundscape via sound API.
+2. Loop with fade-in.
+3. Run for duration.
+4. Fade out.
 
 ## Allowed Outputs
 
@@ -45,15 +41,12 @@ Duration: default 5 minutes. Density and texture may be specified.
 
 ## Failure / Stop Behavior
 
-- Unknown mood is rejected with minimal error.
+- Unsupported mode parameters are rejected with minimal error.
 - Escape/Stop kills audio immediately.
 
 ## Examples
 
 ```
-/ear +mood:tired
-→ Preparing. → [soundscape loop] → [05:00] → Session complete.
-
-/ear +mood:foggy
+/ear 5
 → Preparing. → [soundscape loop] → [05:00] → Session complete.
 ```

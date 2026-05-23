@@ -13,15 +13,15 @@ Breath-like reference pulse. A timing reference, not medical advice.
 ## Allowed Inputs
 
 ```
-/air
+/air [duration_minutes]
 ```
 
-Duration: default 5 minutes. Density and texture may be specified.
+Duration: 1, 3, 5, 15, 30, or 60 minutes. Default: 5.
 
 ## Behavior
 
 ### MVP
-1. Generate a slow breath-like reference pulse via sound API.
+1. Generate a slow breath-like reference pulse via local synthesis or the configured voice API.
 2. Status: `Breath reference starts.`
 3. Loop with fade-in.
 4. Run for duration.

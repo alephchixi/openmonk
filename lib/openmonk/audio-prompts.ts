@@ -6,13 +6,31 @@ import type { OpenMonkMode, OpenMonkParams } from "./types";
 import { sanitizePrompt } from "./safety";
 
 /**
- * Build OM-like vocal text for TTS.
- * Density controls spacing/repetition.
+ * Build OM vocal text for TTS.
+ *
+ * Produces a sustained AUM chant with the full vowel progression:
+ *   A (open) -> U (transition) -> M (nasal drone)
+ *
+ * The client stretches the nasal tail after decode, so this text is only
+ * the source vocal gesture, not the final mantra duration.
+ * Ignores density/pitch params; om mode is always one sustained drone.
  */
-export function buildOmText(params: OpenMonkParams): string {
-  if (params.density === "dense") return "ommm... ommm... ommm...";
-  if (params.density === "regular") return "ommm...     ommm...";
-  return "ommm...             ommm...";
+export function buildOmText(_params: OpenMonkParams): string {
+  return "aaaaauuuuummmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm.";
+}
+
+/**
+ * Build breath-like vocal text for ElevenLabs TTS.
+ * Uses only phonetic breath syllables so the provider is not asked to speak
+ * instructions such as "inhale" or "exhale".
+ */
+export function buildBreathText(_params: OpenMonkParams): string {
+  return [
+    "haaaaaah",
+    "hooooooh",
+    "haaaaaah",
+    "hooooooh",
+  ].join("........ ");
 }
 
 /**
@@ -21,19 +39,17 @@ export function buildOmText(params: OpenMonkParams): string {
  */
 export function buildSoundPrompt(mode: OpenMonkMode, params: OpenMonkParams): string {
   const templates: Record<string, string> = {
-    air: "soft breath-like air pulse, slow, non-medical reference, no instruction, no spoken words",
-    "ear:tired": "minimal low room tone, sparse granular air, soft transients, no melody, no voice",
-    "ear:foggy": "thin distant drone, blurred granular texture, quiet, no speech, no emotional narration",
-    "ear:soft": "gentle ambient field, warm low hum, slow movement, no melody, no voice, no words",
-    "ear:overloaded": "very sparse reset, low stable drone, reduced density, no speech",
-    "ear:late": "quiet night room tone, minimal distant hum, sparse texture, no melody, no voice",
-    "ear:neutral": "neutral ambient field, low room tone, sparse granular texture, no melody, no voice",
-    om_fallback: "low synthetic vowel drone, distant, breathy, no words, no speech, slow fade, contemplative but not religious",
+    "ear:tired": "slow evolving abstract ambient soundscape, low warm room tone, sparse granular motion, soft transients, seamless loop, no melody, no voice, no speech",
+    "ear:foggy": "generative blurred drone field, thin distant layers, drifting granular texture, quiet spectral movement, seamless loop, no voice, no speech",
+    "ear:soft": "gentle generative ambient field, warm low hum, slow harmonic bloom, subtle particles, seamless loop, no melody, no voice, no words",
+    "ear:overloaded": "minimal generative reset soundscape, low stable drone, wide quiet space, sparse density, slow evolving texture, seamless loop, no speech",
+    "ear:late": "quiet night generative room tone, distant low hum, sparse air texture, slow drifting layers, seamless loop, no melody, no voice",
+    "ear:neutral": "evolving abstract ambient soundscape, low room tone, granular air, slow spectral drift, seamless loop, no melody, no voice, no speech",
   };
 
   let key = mode as string;
-  if (mode === "ear" && params.mood) {
-    key = `ear:${params.mood}`;
+  if (mode === "ear") {
+    key = `ear:${params.mood ?? "neutral"}`;
   }
 
   const template = templates[key];
@@ -63,8 +79,8 @@ export function buildSoundPrompt(mode: OpenMonkMode, params: OpenMonkParams): st
 export function getAudioRoute(mode: OpenMonkMode): "speech" | "sound" | "none" {
   switch (mode) {
     case "om":
-      return "speech";
     case "air":
+      return "speech";
     case "ear":
       return "sound";
     case "zen":

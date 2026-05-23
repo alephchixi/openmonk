@@ -58,6 +58,20 @@ test("mobile layout avoids horizontal overflow", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test("mode controls expose duration and audio provider only", async ({ page }) => {
+  await page.goto("/");
+
+  for (const mode of ["om", "air", "ear"]) {
+    await page.locator(`#mode-${mode}`).click();
+    await expect(page.locator(".duration-dot")).toHaveCount(6);
+    await expect(page.locator("#provider-synth")).toBeVisible();
+    await expect(page.locator("#provider-elevenlabs")).toBeVisible();
+    await expect(page.locator("#density-sparse")).toHaveCount(0);
+    await expect(page.locator("#distance-far")).toHaveCount(0);
+    await expect(page.locator("#texture-granular")).toHaveCount(0);
+  }
+});
+
 test("Spanish toggle translates visible UI", async ({ page }) => {
   await page.goto("/");
 

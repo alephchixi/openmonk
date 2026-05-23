@@ -80,15 +80,9 @@ export function OpenMonkPanel() {
 
     const storedMode = window.localStorage.getItem("openmonk-last-mode");
     if (storedMode && ["zen", "om", "air", "ear"].includes(storedMode)) {
-      setSelectedMode(storedMode as OpenMonkMode);
-      const storedParams = window.localStorage.getItem("openmonk-last-params");
-      if (storedParams) {
-        try {
-          setParams(JSON.parse(storedParams));
-        } catch { /* use defaults */ }
-      } else {
-        setParams(MODE_DEFAULTS[storedMode as OpenMonkMode].params);
-      }
+      const mode = storedMode as OpenMonkMode;
+      setSelectedMode(mode);
+      setParams(MODE_DEFAULTS[mode].params);
     }
     const storedDuration = window.localStorage.getItem("openmonk-last-duration");
     if (storedDuration) {

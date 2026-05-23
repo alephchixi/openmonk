@@ -1,6 +1,6 @@
 // OpenMonk — Sound API Route
 // POST /api/audio/sound
-// Generates air and ear soundscape material via ElevenLabs sound generation.
+// Generates Ear soundscape material via ElevenLabs sound generation.
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import {
 } from "@/lib/openmonk/server/audio-api";
 
 const RequestSchema = z.object({
-  mode: z.enum(["air", "ear"]),
+  mode: z.literal("ear"),
   durationSeconds: z.number().int().min(60).max(3600),
   params: z.object({
     density: z.enum(["sparse", "regular", "dense"]).optional(),
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         text: prompt,
         duration_seconds: durationSeconds,
-        prompt_influence: 0.5,
+        prompt_influence: 0.35,
       }),
     });
 

@@ -13,24 +13,13 @@ describe("parseCommand", () => {
     }
   });
 
-  it("parses /om 5 --low --sparse --far", () => {
-    const result = parseCommand("/om 5 --low --sparse --far");
+  it("parses /om 5", () => {
+    const result = parseCommand("/om 5");
     expect(isParseError(result)).toBe(false);
     if (!isParseError(result)) {
       expect(result.mode).toBe("om");
       expect(result.durationSeconds).toBe(300);
-      expect(result.params.pitch).toBe("low");
-      expect(result.params.density).toBe("sparse");
-      expect(result.params.distance).toBe("far");
-    }
-  });
-
-  it("parses /ear +mood:tired", () => {
-    const result = parseCommand("/ear +mood:tired");
-    expect(isParseError(result)).toBe(false);
-    if (!isParseError(result)) {
-      expect(result.mode).toBe("ear");
-      expect(result.params.mood).toBe("tired");
+      expect(result.params).toEqual({});
     }
   });
 
@@ -56,19 +45,19 @@ describe("parseCommand", () => {
     expect(isParseError(parseCommand("/still 3"))).toBe(true);
   });
 
-  it("rejects unknown flag", () => {
-    const result = parseCommand("/om 5 --turbo");
+  it("rejects mode parameters", () => {
+    const result = parseCommand("/om 5 --low");
     expect(isParseError(result)).toBe(true);
     if (isParseError(result)) {
-      expect(result.message).toContain("Unknown flag");
+      expect(result.message).toBe("Mode parameters are not available.");
     }
   });
 
-  it("rejects invalid mood", () => {
-    const result = parseCommand("/ear +mood:angry");
+  it("rejects mood parameters", () => {
+    const result = parseCommand("/ear +mood:tired");
     expect(isParseError(result)).toBe(true);
     if (isParseError(result)) {
-      expect(result.message).toContain("Unknown mood");
+      expect(result.message).toBe("Mode parameters are not available.");
     }
   });
 
@@ -90,28 +79,6 @@ describe("parseCommand", () => {
     }
   });
 
-  it("rejects conflicting flags within the same group", () => {
-    const result = parseCommand("/om 5 --low --high");
-    expect(isParseError(result)).toBe(true);
-    if (isParseError(result)) {
-      expect(result.message).toContain("Conflicting flag");
-      expect(result.message).toContain("pitch");
-    }
-  });
-
-  it("rejects conflicting density flags", () => {
-    const result = parseCommand("/om 5 --sparse --dense");
-    expect(isParseError(result)).toBe(true);
-    if (isParseError(result)) {
-      expect(result.message).toContain("Conflicting flag");
-      expect(result.message).toContain("density");
-    }
-  });
-
-  it("accepts non-conflicting flags from different groups", () => {
-    const result = parseCommand("/om 5 --low --sparse --far");
-    expect(isParseError(result)).toBe(false);
-  });
 });
 
 describe("resolveDuration", () => {

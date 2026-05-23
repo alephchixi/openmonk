@@ -2,7 +2,7 @@
 // Parses slash commands into structured session parameters.
 
 import type { ParsedCommand, ParseError, OpenMonkMode, OpenMonkParams } from "./types";
-import { ALL_MODES, MVP_MODES, ALLOWED_DURATIONS_MIN, FLAG_ALIASES, ALLOWED_MOODS } from "./constants";
+import { ALL_MODES, MVP_MODES, ALLOWED_DURATIONS_MIN } from "./constants";
 
 type ParseResult = ParsedCommand | ParseError;
 
@@ -11,8 +11,8 @@ type ParseResult = ParsedCommand | ParseError;
  * 
  * Examples:
  *   /zen 5
- *   /om 5 --low --sparse --far
- *   /ear +mood:tired
+ *   /om 5
+ *   /ear 15
  */
 export function parseCommand(input: string): ParseResult {
   const trimmed = input.trim();
@@ -62,28 +62,8 @@ export function parseCommand(input: string): ParseResult {
       continue;
     }
 
-    // Flag (--key)
-    if (token.startsWith("--")) {
-      const alias = FLAG_ALIASES[token];
-      if (!alias) {
-        return { error: true, message: `Unknown flag: ${token}.` };
-      }
-      if (params[alias.key] !== undefined) {
-        return { error: true, message: `Conflicting flag: ${token} (already set ${alias.key}).` };
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (params as any)[alias.key] = alias.value;
-      continue;
-    }
-
-    // Mood (+mood:value)
-    if (token.startsWith("+mood:")) {
-      const moodValue = token.slice(6);
-      if (!(ALLOWED_MOODS as readonly string[]).includes(moodValue)) {
-        return { error: true, message: `Unknown mood: ${moodValue}.` };
-      }
-      params.mood = moodValue as OpenMonkParams["mood"];
-      continue;
+    if (token.startsWith("--") || token.startsWith("+mood:")) {
+      return { error: true, message: "Mode parameters are not available." };
     }
 
     // Vow text (quoted string — collect remaining)

@@ -1,10 +1,10 @@
 // OpenMonk — Speech API Route
 // POST /api/audio/speech
-// Generates OM-like vocal material via ElevenLabs TTS.
+// Generates OM and breath-like vocal material via ElevenLabs TTS.
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { buildOmText } from "@/lib/openmonk/audio-prompts";
+import { buildBreathText, buildOmText } from "@/lib/openmonk/audio-prompts";
 import type { OpenMonkParams } from "@/lib/openmonk/types";
 import {
   audioCacheKey,
@@ -18,7 +18,7 @@ import {
 } from "@/lib/openmonk/server/audio-api";
 
 const RequestSchema = z.object({
-  mode: z.literal("om"),
+  mode: z.enum(["om", "air"]),
   durationSeconds: z.number().int().min(60).max(3600),
   params: z.object({
     density: z.enum(["sparse", "regular", "dense"]).optional(),
@@ -31,9 +31,9 @@ const RequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_OM_VOICE_ID;
+  const voiceId = process.env.ELEVENLABS_OM_VOICE_ID?.trim();
 
-  if (!apiKey) {
+  if (!apiKey || !voiceId) {
     return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
   }
 
@@ -52,21 +52,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid parameters." }, { status: 400 });
   }
 
+  const { mode } = parsed.data;
   const params: OpenMonkParams = parsed.data.params ?? {};
-  const text = buildOmText(params);
+  const text = mode === "air" ? buildBreathText(params) : buildOmText(params);
   const primaryModel = process.env.ELEVENLABS_TTS_MODEL ?? "eleven_v3";
   const fallbackModel = process.env.ELEVENLABS_TTS_FALLBACK_MODEL ?? "eleven_multilingual_v2";
 
-  // Use a default voice if no specific voice ID is configured
-  const effectiveVoiceId = voiceId || "21m00Tcm4TlvDq8ikWAM"; // "Rachel" default
-
-  const result = await tryTTS(apiKey, effectiveVoiceId, text, primaryModel);
+  const result = await tryTTS(apiKey, voiceId, text, primaryModel);
   if (result.ok) {
     return audioResponse(result.data, result.contentType);
   }
 
   // Fallback model
-  const fallbackResult = await tryTTS(apiKey, effectiveVoiceId, text, fallbackModel);
+  const fallbackResult = await tryTTS(apiKey, voiceId, text, fallbackModel);
   if (fallbackResult.ok) {
     return audioResponse(fallbackResult.data, fallbackResult.contentType);
   }
@@ -101,8 +99,8 @@ async function tryTTS(
           text,
           model_id: modelId,
           voice_settings: {
-            stability: 0.8,
-            similarity_boost: 0.5,
+            stability: 0.9,
+            similarity_boost: 0.8,
             style: 0.0,
             use_speaker_boost: false,
           },

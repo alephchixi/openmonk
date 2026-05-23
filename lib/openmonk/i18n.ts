@@ -17,7 +17,7 @@ export const UI_COPY = {
     volume: "Volume",
     remaining: "remaining",
     commandInput: "Command input",
-    commandPlaceholder: "/om 5 --low --sparse --far...",
+    commandPlaceholder: "/om 5",
     modeGroup: "Mode",
     labels: {
       duration: "Duration",
@@ -30,7 +30,7 @@ export const UI_COPY = {
       zen: { label: "Zen", desc: "Silent timer" },
       om: { label: "OM", desc: "Sustained vocal drone" },
       air: { label: "Air", desc: "Breath-like pulse" },
-      ear: { label: "Ear", desc: "Mood soundscape" },
+      ear: { label: "Ear", desc: "Ambient soundscape" },
       mauna: { label: "Mauna", desc: "Non-discursive mode" },
       vow: { label: "Vow", desc: "Temporary constraint" },
     } satisfies Record<OpenMonkMode, { label: string; desc: string }>,
@@ -52,12 +52,12 @@ export const UI_COPY = {
     } satisfies Record<Texture, string>,
     providers: {
       synth: {
-        label: "Synth",
-        desc: "Local synthesis - instant, no API needed",
+        label: "Mock audio",
+        desc: "Local generated audio - instant, no API needed",
       },
       elevenlabs: {
-        label: "Voice API",
-        desc: "ElevenLabs - richer, requires API key",
+        label: "Synthetic voice",
+        desc: "ElevenLabs using the configured voice ID",
       },
     },
     status: {
@@ -88,7 +88,7 @@ export const UI_COPY = {
     volume: "Volumen",
     remaining: "restantes",
     commandInput: "Entrada de comando",
-    commandPlaceholder: "/om 5 --low --sparse --far...",
+    commandPlaceholder: "/om 5",
     modeGroup: "Modo",
     labels: {
       duration: "Duracion",
@@ -101,7 +101,7 @@ export const UI_COPY = {
       zen: { label: "Zen", desc: "Temporizador silencioso" },
       om: { label: "OM", desc: "Drone vocal sostenido" },
       air: { label: "Aire", desc: "Pulso parecido a respiracion" },
-      ear: { label: "Oido", desc: "Paisaje sonoro de estado" },
+      ear: { label: "Oido", desc: "Paisaje sonoro ambiental" },
       mauna: { label: "Mauna", desc: "Modo no discursivo" },
       vow: { label: "Voto", desc: "Restriccion temporal" },
     } satisfies Record<OpenMonkMode, { label: string; desc: string }>,
@@ -123,12 +123,12 @@ export const UI_COPY = {
     } satisfies Record<Texture, string>,
     providers: {
       synth: {
-        label: "Sintesis",
-        desc: "Sintesis local - instantanea, sin API",
+        label: "Audio simulado",
+        desc: "Audio generado local - instantaneo, sin API",
       },
       elevenlabs: {
-        label: "API de Voz",
-        desc: "ElevenLabs - mas rico, requiere API key",
+        label: "Voz sintetica",
+        desc: "ElevenLabs usando la voz configurada",
       },
     },
     status: {
@@ -173,6 +173,8 @@ export function translateCommandError(message: string, language: UiLanguage): st
 
   const unknownArgument = message.match(/^Unknown argument: (.+)\.$/);
   if (unknownArgument) return `Argumento desconocido: ${unknownArgument[1]}.`;
+
+  if (message === "Mode parameters are not available.") return "Los parametros de modo no estan disponibles.";
 
   const conflictingFlag = message.match(/^Conflicting flag: (.+) \(already set (.+)\)\.$/);
   if (conflictingFlag) return `Parametro en conflicto: ${conflictingFlag[1]} (ya definido ${conflictingFlag[2]}).`;
