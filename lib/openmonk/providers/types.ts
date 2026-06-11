@@ -15,4 +15,6 @@ export type ProviderRequest = {
 export type ProviderResult = {
   buffer: AudioBuffer;
   loop: boolean;
+  loopStartSeconds?: number;
+  loopEndSeconds?: number;
 };

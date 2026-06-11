@@ -13,7 +13,8 @@ The local provider keeps the instrument usable without an API key or network lat
 
 - Generated via ElevenLabs text-to-speech streaming endpoint.
 - Input text is a controlled A-U-M source gesture.
-- After decode, the client samples the nasal tail and extends it into an 18 second M sustain before looping.
+- After decode, OpenMonk samples the stable nasal tail and builds a 15 second circular M sustain.
+- The loop end is crossfaded into the loop start, then playback jumps past the overlap window so the A-U-M attack is not repeated on every cycle.
 - Voice settings: high stability (0.9), high similarity boost (0.8), no style, no speaker boost.
 - Voice ID: required from `ELEVENLABS_OM_VOICE_ID`; no default public voice fallback.
 - Primary model: `eleven_v3`. Fallback: `eleven_multilingual_v2`.
@@ -29,7 +30,8 @@ The local provider keeps the instrument usable without an API key or network lat
 - Generated via ElevenLabs sound generation endpoint.
 - Model: `eleven_text_to_sound_v2`.
 - Prompt templates are controlled server-side. No user text reaches the API.
-- Ear source clips are 30 seconds and prompted as evolving abstract soundscapes. Looped client-side with Web Audio fades.
+- Ear source clips are requested as 30 second loopable sound effects (`loop: true`) and prompted as evolving abstract soundscapes.
+- After decode, OpenMonk adds a small overlap loop window as a fallback against audible MP3 boundary cuts.
 
 ## Playback
 
@@ -59,5 +61,5 @@ The local provider keeps the instrument usable without an API key or network lat
 ## Looping
 
 - Sessions longer than the generated clip loop using `AudioBufferSourceNode.loop = true`.
-- Loop points are handled by the browser's Web Audio implementation.
-- If audible clicks occur at loop points, future work will add cross-fade overlap.
+- Provider audio may include `loopStart`/`loopEnd` metadata so Web Audio loops over a prepared overlap window instead of the full raw clip.
+- OM loops use a 15 second sustained vocal cycle. Ear loops use the 30 second ElevenLabs source with a short overlap window.

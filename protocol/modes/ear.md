@@ -20,8 +20,8 @@ Duration: 1, 3, 5, 15, 30, or 60 minutes. Default: 5.
 
 ## Behavior
 
-1. Generate soundscape via sound API.
-2. Loop with fade-in.
+1. Generate a 30 second loopable soundscape via sound API.
+2. Loop with fade-in and prepared overlap points.
 3. Run for duration.
 4. Fade out.
 

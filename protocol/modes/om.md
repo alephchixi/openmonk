@@ -22,8 +22,8 @@ Duration: 1, 3, 5, 15, 30, or 60 minutes. Default: 5.
 
 1. Generate OM-like vocal/drone via local synthesis or the configured voice API.
 2. Decode audio.
-3. Sustain the nasal M tail into a 15-20 second mantra loop.
-4. Loop with long fade-in (2s).
+3. Sustain the nasal M tail into a 15 second circular mantra loop.
+4. Loop with long fade-in (2s), using prepared loop points instead of repeating the attack.
 5. Run for specified duration.
 6. Fade out (3s).
 7. Status: `Session complete.`

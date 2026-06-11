@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { buildSoundPrompt, getSoundGenerationDuration } from "@/lib/openmonk/audio-prompts";
+import { DEFAULT_SFX_MODEL } from "@/lib/openmonk/constants";
 import type { OpenMonkParams } from "@/lib/openmonk/types";
 import {
   audioCacheKey,
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
   }
 
   const durationSeconds = getSoundGenerationDuration(mode);
-  const cacheKey = audioCacheKey({ route: "sound", mode, prompt, durationSeconds });
+  const modelId = process.env.ELEVENLABS_SFX_MODEL ?? DEFAULT_SFX_MODEL;
+  const cacheKey = audioCacheKey({ route: "sound", mode, prompt, durationSeconds, modelId, loop: true });
   const cached = getServerAudioCache(cacheKey);
   if (cached) {
     return audioResponse(cached.data.slice(0), cached.contentType);
@@ -78,7 +80,9 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         text: prompt,
+        model_id: modelId,
         duration_seconds: durationSeconds,
+        loop: true,
         prompt_influence: 0.35,
       }),
     });

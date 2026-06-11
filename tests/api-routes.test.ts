@@ -42,6 +42,7 @@ beforeEach(() => {
   vi.stubEnv("ELEVENLABS_OM_VOICE_ID", "voice-id");
   vi.stubEnv("ELEVENLABS_TTS_MODEL", "primary-model");
   vi.stubEnv("ELEVENLABS_TTS_FALLBACK_MODEL", "fallback-model");
+  vi.stubEnv("ELEVENLABS_SFX_MODEL", "sound-model");
   vi.stubEnv("OPENMONK_AUDIO_RATE_LIMIT", "100");
 });
 
@@ -164,6 +165,26 @@ describe("POST /api/audio/sound", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("requests a 30 second loopable ElevenLabs soundscape", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(audioFetchResponse([7, 7, 7]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await soundPost(jsonRequest("/api/audio/sound", {
+      mode: "ear",
+      durationSeconds: 300,
+      params: { mood: "soft" },
+    }));
+
+    expect(response.status).toBe(200);
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(body).toMatchObject({
+      model_id: "sound-model",
+      duration_seconds: 30,
+      loop: true,
+      prompt_influence: 0.35,
+    });
   });
 
   it("rate limits repeated requests before hitting upstream", async () => {

@@ -345,6 +345,8 @@ export function OpenMonkPanel() {
 
       await engine.start(result.buffer, {
         loop: result.loop,
+        loopStartSeconds: result.loopStartSeconds,
+        loopEndSeconds: result.loopEndSeconds,
         fadeInMs: 2000,
         volume,
       });

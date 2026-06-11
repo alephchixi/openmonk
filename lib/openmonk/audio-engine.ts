@@ -5,6 +5,8 @@ import { DEFAULT_FADE_IN_MS, DEFAULT_FADE_OUT_MS, DEFAULT_VOLUME } from "./const
 
 export type AudioEngineOptions = {
   loop: boolean;
+  loopStartSeconds?: number;
+  loopEndSeconds?: number;
   fadeInMs?: number;
   volume?: number;
   onEnded?: () => void;
@@ -56,6 +58,36 @@ export class OpenMonkAudioEngine {
       }
     }
     return this.ctx;
+  }
+
+  private applyLoopWindow(sourceNode: AudioBufferSourceNode, buffer: AudioBuffer, options: AudioEngineOptions): void {
+    sourceNode.loop = options.loop;
+    if (!options.loop) return;
+
+    const loopStart = Math.max(0, Math.min(options.loopStartSeconds ?? 0, buffer.duration));
+    const requestedLoopEnd = options.loopEndSeconds ?? buffer.duration;
+    const loopEnd = Math.max(loopStart + 0.01, Math.min(requestedLoopEnd, buffer.duration));
+
+    sourceNode.loopStart = loopStart;
+    sourceNode.loopEnd = loopEnd;
+  }
+
+  private getPlaybackOffset(elapsed: number): number {
+    if (!this._currentBuffer || !this._currentOptions?.loop) {
+      return elapsed;
+    }
+
+    const duration = this._currentBuffer.duration;
+    const loopStart = Math.max(0, Math.min(this._currentOptions.loopStartSeconds ?? 0, duration));
+    const requestedLoopEnd = this._currentOptions.loopEndSeconds ?? duration;
+    const loopEnd = Math.max(loopStart + 0.01, Math.min(requestedLoopEnd, duration));
+
+    if (elapsed <= loopEnd) {
+      return Math.min(elapsed, duration);
+    }
+
+    const loopDuration = loopEnd - loopStart;
+    return loopStart + ((elapsed - loopEnd) % loopDuration);
   }
 
   /**
@@ -129,7 +161,7 @@ export class OpenMonkAudioEngine {
     // Create source
     this.sourceNode = ctx.createBufferSource();
     this.sourceNode.buffer = buffer;
-    this.sourceNode.loop = options.loop;
+    this.applyLoopWindow(this.sourceNode, buffer, options);
     this.sourceNode.connect(this.gainNode);
 
     this.sourceNode.onended = () => {
@@ -148,9 +180,7 @@ export class OpenMonkAudioEngine {
   async pause(): Promise<void> {
     if (!this._playing || !this.ctx || !this._currentBuffer) return;
     const elapsed = this.ctx.currentTime - this._startedAt;
-    this._pausedAt = this._currentOptions?.loop
-      ? elapsed % this._currentBuffer.duration
-      : elapsed;
+    this._pausedAt = this.getPlaybackOffset(elapsed);
     await this.stop({ fadeOutMs: 300 });
   }
 
@@ -180,7 +210,7 @@ export class OpenMonkAudioEngine {
 
     this.sourceNode = ctx.createBufferSource();
     this.sourceNode.buffer = this._currentBuffer;
-    this.sourceNode.loop = options.loop;
+    this.applyLoopWindow(this.sourceNode, this._currentBuffer, options);
     this.sourceNode.connect(this.gainNode);
 
     this.sourceNode.onended = () => {
