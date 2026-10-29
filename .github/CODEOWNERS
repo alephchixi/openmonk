@@ -7,3 +7,7 @@
 **/uv.lock @emeisazam
 **/wrangler.* @emeisazam
 /scripts/*release* @emeisazam
+
+# Inventory submission changes must remain owner-reviewed.
+/scripts/dependency_inventory.py @emeisazam
+/tests/test_dependency_inventory.py @emeisazam
