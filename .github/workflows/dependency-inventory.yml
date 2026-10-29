@@ -31,6 +31,8 @@ jobs:
           python-version: "3.12.16"
       - name: Check inventory boundaries and package relationships
         run: python -m unittest discover -s tests -p test_dependency_inventory.py
+      - name: Validate the committed npm inventory
+        run: python scripts/dependency_inventory.py --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --output "$RUNNER_TEMP/inventory-dry-run.json"
 
   submit:
     name: Submit current-main inventory
