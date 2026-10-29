@@ -1,0 +1,58 @@
+name: Dependency inventory
+
+on:
+  pull_request:
+    paths: [".github/workflows/dependency-inventory.yml", "scripts/dependency_inventory.py", "tests/test_dependency_inventory.py", "package-lock.json", "requirements*.txt"]
+  push:
+    branches: [main]
+    paths: [".github/workflows/dependency-inventory.yml", "scripts/dependency_inventory.py", "tests/test_dependency_inventory.py", "package-lock.json", "requirements*.txt"]
+  schedule:
+    - cron: "29 15 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-inventory-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Inventory format
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.16"
+      - name: Check inventory boundaries and package relationships
+        run: python -m unittest discover -s tests -p test_dependency_inventory.py
+
+  submit:
+    name: Submit current-main inventory
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.16"
+      - name: Build the dependency snapshot from reviewed metadata
+        run: python scripts/dependency_inventory.py --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" --output "$RUNNER_TEMP/dependencies.json"
+      - name: Submit only while this revision is current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)"
+          test "$main_sha" = "$GITHUB_SHA"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/dependency-graph/snapshots" --input "$RUNNER_TEMP/dependencies.json"
