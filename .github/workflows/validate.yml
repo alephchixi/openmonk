@@ -29,8 +29,31 @@ jobs:
         run: node --version
       - name: Install locked dependencies
         run: npm ci
+      - name: Reject known dependency advisories
+        run: npm audit --audit-level=low
       - name: Validate application
         run: |
+          npm run lint
           npm run typecheck
           npm test
           npm run build
+      - name: Install Chromium for the existing browser suite
+        run: npm exec playwright install --with-deps chromium
+      - name: Verify the production build in desktop and mobile Chromium
+        env:
+          CI: "true"
+        run: npm exec playwright test
+      - name: Retain the qualified production build for static review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: openmonk-qualified-build-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            .next
+            !.next/cache/**
+            public
+            package.json
+            package-lock.json
+            next.config.ts
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
