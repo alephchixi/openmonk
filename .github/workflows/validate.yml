@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Record Node.js runtime
         run: node --version
+      - name: Verify the public build-review boundary
+        run: node --test .github/scripts/stage-public-build-review.test.mjs
       - name: Install locked dependencies
         run: npm ci
       - name: Reject known dependency advisories
@@ -43,17 +45,13 @@ jobs:
         env:
           CI: "true"
         run: npm exec playwright test
-      - name: Retain the qualified production build for static review
+      - name: Stage public assets and build hashes without server-private material
+        run: node .github/scripts/stage-public-build-review.mjs
+      - name: Retain public assets and build hashes for static review
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: openmonk-qualified-build-${{ github.sha }}-${{ github.run_id }}
-          path: |
-            .next
-            !.next/cache/**
-            public
-            package.json
-            package-lock.json
-            next.config.ts
+          name: openmonk-public-build-review-${{ github.sha }}-${{ github.run_id }}
+          path: .build-review
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
